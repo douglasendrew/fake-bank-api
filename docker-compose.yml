@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fake_bank_app
+    restart: always
+    ports:
+      - "9501:9501"
+    environment:
+      - APP_NAME=FakeBank
+      - APP_ENV=local
+      - DB_DRIVER=pgsql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=fake_bank
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=FakeBankSuperSecretJwtKey2026!#
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - fakebank_net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: fake_bank_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: fake_bank
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - fakebank_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: fake_bank_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - fakebank_net
+
+networks:
+  fakebank_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
