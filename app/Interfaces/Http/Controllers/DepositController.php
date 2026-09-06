@@ -21,7 +21,7 @@ class DepositController
     {
         $userUuid = (string) $request->getAttribute('user_uuid');
         $accountNumber = (string) $request->input('account_number', '');
-        $amount = (float) $request->input('amount', 0.0);
+        $amount = $request->input('amount');
 
         $result = $this->depositMoneyUseCase->execute($accountNumber, $amount, $userUuid);
 

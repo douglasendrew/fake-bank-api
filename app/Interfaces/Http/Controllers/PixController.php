@@ -58,7 +58,7 @@ class PixController
         $senderUuid = (string) $request->getAttribute('user_uuid');
         $target = (string) $request->input('pix_key', $request->input('target', $request->input('key', $request->input('account_number', ''))));
         $type = (string) $request->input('pix_type', $request->input('type', ''));
-        $amount = (float) $request->input('amount', 0.0);
+        $amount = $request->input('amount');
 
         $result = $this->createPixTransferUseCase->execute($senderUuid, $target, $type, $amount);
 

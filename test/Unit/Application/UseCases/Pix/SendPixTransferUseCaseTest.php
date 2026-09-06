@@ -79,7 +79,7 @@ class SendPixTransferUseCaseTest extends TestCase
             $transactionRepository
         );
 
-        $result = $useCase->execute('sender-uuid', '222222222-2', 'account_number', 50.00);
+        $result = $useCase->execute('sender-uuid', '222222222-2', 'account_number', 5000);
 
         $this->assertEquals(50.00, $result['amount']);
         $this->assertEquals('pending', $result['status']);
@@ -135,5 +135,27 @@ class SendPixTransferUseCaseTest extends TestCase
         $this->assertEquals('Dest User', $result['recipient']['name']);
         $this->assertEquals('823.***.***-38', $result['recipient']['cpf']);
         $this->assertEquals('222222222-2', $result['recipient']['account_number']);
+    }
+
+    public function testSendPixTransferThrowsWhenAmountIsFloat(): void
+    {
+        $userRepository = Mockery::mock(UserRepositoryInterface::class);
+        $accountRepository = Mockery::mock(AccountRepositoryInterface::class);
+        $pixKeyRepository = Mockery::mock(PixKeyRepositoryInterface::class);
+        $driverFactory = Mockery::mock(DriverFactory::class);
+        $transactionRepository = Mockery::mock(TransactionRepositoryInterface::class);
+
+        $useCase = new SendPixTransferUseCase(
+            $userRepository,
+            $accountRepository,
+            $pixKeyRepository,
+            $driverFactory,
+            $transactionRepository
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The amount must be an integer in cents.');
+
+        $useCase->execute('sender-uuid', '222222222-2', 'account_number', 50.50);
     }
 }

@@ -25,14 +25,14 @@ class SendPixTransferUseCase
         private TransactionRepositoryInterface $transactionRepository
     ) {}
 
-    public function execute(string $senderUuid, string $targetKeyOrAccount, string $typeInput, float $amount): array
+    public function execute(string $senderUuid, string $targetKeyOrAccount, string $typeInput, mixed $amount): array
     {
         $type = strtolower(trim($typeInput));
         if (! in_array($type, ['email', 'cpf', 'account_number'], true)) {
             throw new InvalidArgumentException("Invalid PIX transfer type: {$typeInput}. Allowed types: 'email', 'cpf', 'account_number'.");
         }
 
-        $money = new Money($amount);
+        $money = Money::fromCents($amount);
 
         // Retrieve sender user and account
         $senderUser = $this->userRepository->findByUuid($senderUuid);

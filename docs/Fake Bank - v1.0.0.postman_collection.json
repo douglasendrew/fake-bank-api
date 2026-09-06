@@ -1,0 +1,498 @@
+{
+	"info": {
+		"_postman_id": "47a07080-b859-48da-92c5-9b09513f9a9d",
+		"name": "Fake Bank - v1.0.0",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "19878512"
+	},
+	"item": [
+		{
+			"name": "API",
+			"item": [
+				{
+					"name": "v1 - API Health",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Douglas Silva\",\n    \"cpf\": \"12345678901\",\n    \"password\": \"SenhaSegura123@\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:{{PORT}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "{{PORT}}"
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Account",
+			"item": [
+				{
+					"name": "v1 - Create Account",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{FAKE_NAME}}\",\n    \"cpf\": \"{{FAKE_CPF}}\",\n    \"password\": \"{{FAKE_PASSWORD}}\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:{{PORT}}/api/v1/accounts",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"accounts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "v1 - Account Statement",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{JWT_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:{{PORT}}/api/v1/accounts/statement",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"accounts",
+								"statement"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET http://localhost:9501/api/v1/accounts/statement \\\n  -H \"Authorization: Bearer <SEU_TOKEN_JWT>\"\n"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "v1 - Auth",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cpf\": \"{{FAKE_CPF}}\",\n    \"password\": {{FAKE_PASSWORD}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:{{PORT}}/api/v1/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST http://localhost:9501/api/v1/auth/login \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"cpf\": \"12345678901\",\n    \"password\": \"SenhaSegura123@\"\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "v1 - Me",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{JWT_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:{{PORT}}/api/v1/accounts/me",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"accounts",
+								"me"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET http://localhost:9501/api/v1/accounts/me \\\n  -H \"Authorization: Bearer <SEU_TOKEN_JWT>\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Deposit",
+			"item": [
+				{
+					"name": "v1 - Deposit",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{JWT_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": 25000\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:{{PORT}}/api/v1/accounts/deposit",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"accounts",
+								"deposit"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST http://localhost:9501/api/v1/accounts/deposit \\\n  -H \"Authorization: Bearer <SEU_TOKEN_JWT>\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"amount\": 25000\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "v1 - Deposit Check Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{JWT_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:{{PORT}}/api/v1/accounts/deposit/status/{TRANSACTION_IDENTIFIER}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"accounts",
+								"deposit",
+								"status",
+								"{TRANSACTION_IDENTIFIER}"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET http://localhost:9501/api/v1/accounts/deposit/status/4c947bb3-7bb2-4a7b-a5d2-06b2f153a79d \\\n  -H \"Authorization: Bearer <SEU_TOKEN_JWT>\""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "PIX",
+			"item": [
+				{
+					"name": "v1 - Create PIX Key",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{JWT_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"cpf\",\n    \"key\": \"{{FAKE_CPF}}\"\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:{{PORT}}/api/v1/pix/keys",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"pix",
+								"keys"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST http://localhost:9501/api/v1/pix/keys \\\n  -H \"Authorization: Bearer <SEU_TOKEN_JWT>\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"type\": \"CPF\",\n    \"key\": \"12345678901\"\n  }'\n"
+					},
+					"response": []
+				},
+				{
+					"name": "v1 - List PIX Key",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{JWT_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:{{PORT}}/api/v1/pix/keys",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"pix",
+								"keys"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET http://localhost:9501/api/v1/pix/keys \\\n  -H \"Authorization: Bearer <SEU_TOKEN_JWT>\"\n"
+					},
+					"response": []
+				},
+				{
+					"name": "v1 - Create PIX Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{JWT_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pix_key\": \"82384379038\",\n    \"pix_type\": \"cpf\",\n    \"amount\": 5000\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:{{PORT}}/api/v1/pix/create",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"pix",
+								"create"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST http://localhost:9501/api/v1/pix/create \\\n  -H \"Authorization: Bearer <SEU_TOKEN_JWT>\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"pix_key\": \"38927154088\",\n    \"pix_type\": \"cpf\",\n    \"amount\": 5000\n  }'\n"
+					},
+					"response": []
+				},
+				{
+					"name": "v1 - Confirm PIX Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{JWT_TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"identifier\": \"8f3b610c-f377-4df3-a15d-59124430e3bb\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:{{PORT}}/api/v1/pix/confirm",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"pix",
+								"confirm"
+							]
+						},
+						"description": "Generated from cURL: curl -X POST http://localhost:9501/api/v1/pix/confirm \\\n  -H \"Authorization: Bearer <SEU_TOKEN_JWT>\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"identifier\": \"8f3b610c-f377-4df3-a15d-59124430e3bb\"\n  }'"
+					},
+					"response": []
+				},
+				{
+					"name": "v1 - Check PIX Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{JWT_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:{{PORT}}/api/v1/pix/transfer/status/{PIX_IDENTIFIER}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"pix",
+								"transfer",
+								"status",
+								"{PIX_IDENTIFIER}"
+							]
+						},
+						"description": "Generated from cURL: curl -X GET http://localhost:9501/api/v1/pix/transfer/status/8e30b801-b75d-4f1a-bfa6-ccbda0f8a84c \\\n  -H \"Authorization: Bearer <SEU_TOKEN_JWT>\""
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "PORT",
+			"value": "",
+			"description": "Porta do serviço"
+		},
+		{
+			"key": "FAKE_CPF",
+			"value": "",
+			"description": "CPF de conta para para testes"
+		},
+		{
+			"key": "FAKE_PASSWORD",
+			"value": "",
+			"description": "Senha de conta para testes"
+		},
+		{
+			"key": "FAKE_NAME",
+			"value": "",
+			"description": "Nome de cliente para testes"
+		},
+		{
+			"key": "JWT_TOKEN",
+			"value": ""
+		}
+	]
+}

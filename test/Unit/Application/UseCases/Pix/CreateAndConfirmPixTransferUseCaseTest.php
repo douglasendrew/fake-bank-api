@@ -81,7 +81,7 @@ class CreateAndConfirmPixTransferUseCaseTest extends TestCase
             $transactionRepository
         );
 
-        $result = $createUseCase->execute('sender-uuid', '222222222-2', 'account_number', 75.00);
+        $result = $createUseCase->execute('sender-uuid', '222222222-2', 'account_number', 7500);
 
         $this->assertEquals('created', $result['status']);
         $this->assertEquals(75.00, $result['amount']);
@@ -197,5 +197,25 @@ class CreateAndConfirmPixTransferUseCaseTest extends TestCase
         $this->expectExceptionMessage('Transaction cannot be confirmed. Current status: processing.');
 
         $confirmUseCase->execute('sender-uuid', $transaction->getUuid());
+    }
+
+    public function testCreatePixTransferThrowsWhenAmountIsFloat(): void
+    {
+        $userRepository = Mockery::mock(UserRepositoryInterface::class);
+        $accountRepository = Mockery::mock(AccountRepositoryInterface::class);
+        $pixKeyRepository = Mockery::mock(PixKeyRepositoryInterface::class);
+        $transactionRepository = Mockery::mock(TransactionRepositoryInterface::class);
+
+        $createUseCase = new CreatePixTransferUseCase(
+            $userRepository,
+            $accountRepository,
+            $pixKeyRepository,
+            $transactionRepository
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The amount must be an integer in cents.');
+
+        $createUseCase->execute('sender-uuid', '222222222-2', 'account_number', 75.50);
     }
 }

@@ -22,9 +22,9 @@ class DepositMoneyUseCase
         private TransactionRepositoryInterface $transactionRepository
     ) {}
 
-    public function execute(?string $accountNumber, float $amount, ?string $userUuid = null): array
+    public function execute(?string $accountNumber, mixed $amount, ?string $userUuid = null): array
     {
-        $money = new Money($amount);
+        $money = Money::fromCents($amount);
 
         $account = null;
         if (! empty($accountNumber)) {

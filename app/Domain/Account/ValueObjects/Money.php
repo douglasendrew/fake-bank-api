@@ -19,9 +19,32 @@ class Money
         $this->amount = round($amount, 2);
     }
 
+    public static function fromCents(mixed $cents): self
+    {
+        if (is_float($cents)) {
+            throw new InvalidArgumentException('The amount must be an integer in cents.');
+        }
+
+        if (! is_int($cents) && ! (is_string($cents) && ctype_digit(ltrim($cents, '+')))) {
+            throw new InvalidArgumentException('The amount must be an integer in cents.');
+        }
+
+        $intCents = (int) $cents;
+        if ($intCents <= 0) {
+            throw new InvalidArgumentException('Amount must be greater than zero.');
+        }
+
+        return new self($intCents / 100.0);
+    }
+
     public function getAmount(): float
     {
         return $this->amount;
+    }
+
+    public function toCents(): int
+    {
+        return (int) round($this->amount * 100);
     }
 
     public function add(Money $other): self

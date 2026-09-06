@@ -47,7 +47,7 @@ class DepositMoneyUseCaseTest extends TestCase
 
         $useCase = new DepositMoneyUseCase($accountRepository, $driverFactory, $userRepository, $transactionRepository);
 
-        $result = $useCase->execute('123456789-0', 150.00);
+        $result = $useCase->execute('123456789-0', 15000);
 
         $this->assertEquals('123456789-0', $result['account_number']);
         $this->assertEquals(150.00, $result['amount']);
@@ -82,7 +82,7 @@ class DepositMoneyUseCaseTest extends TestCase
 
         $useCase = new DepositMoneyUseCase($accountRepository, $driverFactory, $userRepository, $transactionRepository);
 
-        $result = $useCase->execute(null, 250.00, 'fake-user-uuid');
+        $result = $useCase->execute(null, 25000, 'fake-user-uuid');
 
         $this->assertEquals('987654321-0', $result['account_number']);
         $this->assertEquals(250.00, $result['amount']);
@@ -104,6 +104,21 @@ class DepositMoneyUseCaseTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Target account not found.');
 
-        $useCase->execute('non-existent', 50.00);
+        $useCase->execute('non-existent', 5000);
+    }
+
+    public function testExecuteThrowsExceptionWhenAmountIsFloat(): void
+    {
+        $accountRepository = Mockery::mock(AccountRepositoryInterface::class);
+        $userRepository = Mockery::mock(UserRepositoryInterface::class);
+        $transactionRepository = Mockery::mock(TransactionRepositoryInterface::class);
+        $driverFactory = Mockery::mock(DriverFactory::class);
+
+        $useCase = new DepositMoneyUseCase($accountRepository, $driverFactory, $userRepository, $transactionRepository);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The amount must be an integer in cents.');
+
+        $useCase->execute('123456789-0', 150.50);
     }
 }
