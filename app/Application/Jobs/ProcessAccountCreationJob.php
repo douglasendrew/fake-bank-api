@@ -8,12 +8,19 @@ use App\Domain\Account\Entities\Account;
 use App\Domain\Account\Repositories\AccountRepositoryInterface;
 use App\Domain\Account\Repositories\UserRepositoryInterface;
 use App\Domain\Account\ValueObjects\AccountNumber;
+use AllowDynamicProperties;
 use Hyperf\AsyncQueue\Job;
 use Hyperf\Context\ApplicationContext;
 
+#[AllowDynamicProperties]
 class ProcessAccountCreationJob extends Job
 {
-    public function __construct(public string $userUuid) {}
+    public string $userUuid;
+
+    public function __construct(string $userUuid)
+    {
+        $this->userUuid = $userUuid;
+    }
 
     public function handle(): void
     {

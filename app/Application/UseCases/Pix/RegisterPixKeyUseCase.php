@@ -59,7 +59,7 @@ class RegisterPixKeyUseCase
         $savedPixKey = $this->pixKeyRepository->save($pixKey);
 
         return [
-            'uuid' => $savedPixKey->getUuid(),
+            'identifier' => $savedPixKey->getUuid(),
             'type' => $savedPixKey->getType(),
             'key' => $savedPixKey->getKey(),
             'created_at' => $savedPixKey->getCreatedAt()->format(DATE_ATOM),

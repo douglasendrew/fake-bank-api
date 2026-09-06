@@ -60,6 +60,16 @@ class PixKeyRepository implements PixKeyRepositoryInterface
         return $row ? $this->mapToEntity($row) : null;
     }
 
+    public function findAllByUserId(int $userId): array
+    {
+        $rows = Db::table('fb_pix_keys')->where('us_id', $userId)->whereNull('pk_deleted_at')->get();
+        $keys = [];
+        foreach ($rows as $row) {
+            $keys[] = $this->mapToEntity($row);
+        }
+        return $keys;
+    }
+
     public function delete(PixKey $pixKey): void
     {
         $now = (new DateTimeImmutable())->format('Y-m-d H:i:s');

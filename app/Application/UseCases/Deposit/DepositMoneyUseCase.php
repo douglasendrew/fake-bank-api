@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Application\UseCases\Deposit;
 
 use App\Application\Jobs\ProcessDepositJob;
+use App\Domain\Account\Entities\Transaction;
 use App\Domain\Account\Repositories\AccountRepositoryInterface;
+use App\Domain\Account\Repositories\TransactionRepositoryInterface;
 use App\Domain\Account\Repositories\UserRepositoryInterface;
 use App\Domain\Account\ValueObjects\Money;
 use Hyperf\AsyncQueue\Driver\DriverFactory;
@@ -16,7 +18,8 @@ class DepositMoneyUseCase
     public function __construct(
         private AccountRepositoryInterface $accountRepository,
         private DriverFactory $driverFactory,
-        private UserRepositoryInterface $userRepository
+        private UserRepositoryInterface $userRepository,
+        private TransactionRepositoryInterface $transactionRepository
     ) {}
 
     public function execute(?string $accountNumber, float $amount, ?string $userUuid = null): array
@@ -37,15 +40,30 @@ class DepositMoneyUseCase
             throw new InvalidArgumentException('Target account not found.');
         }
 
+        // Record pending transaction
+        $transaction = new Transaction(
+            originAccountId: null,
+            destinationAccountId: $account->getId(),
+            type: 'deposit',
+            amount: $money,
+            status: 'pending'
+        );
+        $savedTransaction = $this->transactionRepository->save($transaction);
+
         // Push to async processing queue
         $driver = $this->driverFactory->get('default');
-        $driver->push(new ProcessDepositJob($account->getAccountNumber()->getValue(), $money->getAmount()));
+        $driver->push(new ProcessDepositJob(
+            accountNumber: $account->getAccountNumber()->getValue(),
+            amount: $money->getAmount(),
+            transactionUuid: $savedTransaction->getUuid()
+        ));
 
         return [
             'message' => 'Deposit requested and queued for processing successfully.',
+            'identifier' => $savedTransaction->getUuid(),
             'account_number' => $account->getAccountNumber()->getValue(),
             'amount' => $money->getAmount(),
-            'status' => 'pending',
+            'status' => $savedTransaction->getStatus(),
         ];
     }
 }

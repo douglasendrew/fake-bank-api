@@ -11,4 +11,9 @@ interface TransactionRepositoryInterface
     public function save(Transaction $transaction): Transaction;
 
     public function findByUuid(string $uuid): ?Transaction;
+
+    /**
+     * @return Transaction[]
+     */
+    public function findAllByAccountId(int $accountId): array;
 }

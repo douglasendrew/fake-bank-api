@@ -6,6 +6,7 @@ namespace App\Interfaces\Http\Controllers;
 
 use App\Application\UseCases\Account\CreateAccountUseCase;
 use App\Application\UseCases\Account\GetAccountInfoUseCase;
+use App\Application\UseCases\Account\GetAccountStatementUseCase;
 use App\Application\UseCases\Account\GetAccountStatusUseCase;
 use App\Application\UseCases\Account\UpdateAccountUseCase;
 use Hyperf\HttpServer\Contract\RequestInterface;
@@ -18,8 +19,20 @@ class AccountController
         private CreateAccountUseCase $createAccountUseCase,
         private GetAccountStatusUseCase $getAccountStatusUseCase,
         private UpdateAccountUseCase $updateAccountUseCase,
-        private GetAccountInfoUseCase $getAccountInfoUseCase
+        private GetAccountInfoUseCase $getAccountInfoUseCase,
+        private GetAccountStatementUseCase $getAccountStatementUseCase
     ) {}
+
+    public function getStatement(RequestInterface $request, HttpResponse $response): ResponseInterface
+    {
+        $userUuid = (string) $request->getAttribute('user_uuid');
+        $result = $this->getAccountStatementUseCase->execute($userUuid);
+
+        return $response->json([
+            'success' => true,
+            'data' => $result,
+        ]);
+    }
 
     public function create(RequestInterface $request, HttpResponse $response): ResponseInterface
     {
@@ -36,9 +49,9 @@ class AccountController
         ])->withStatus(201);
     }
 
-    public function getStatus(string $uuid, HttpResponse $response): ResponseInterface
+    public function getStatus(string $identifier, HttpResponse $response): ResponseInterface
     {
-        $result = $this->getAccountStatusUseCase->execute($uuid);
+        $result = $this->getAccountStatusUseCase->execute($identifier);
 
         return $response->json([
             'success' => true,
@@ -46,13 +59,13 @@ class AccountController
         ]);
     }
 
-    public function update(string $uuid, RequestInterface $request, HttpResponse $response): ResponseInterface
+    public function update(string $identifier, RequestInterface $request, HttpResponse $response): ResponseInterface
     {
         $name = (string) $request->input('name', '');
         $cpf = (string) $request->input('cpf', '');
         $password = (string) $request->input('password', '');
 
-        $result = $this->updateAccountUseCase->execute($uuid, $name, $cpf, $password);
+        $result = $this->updateAccountUseCase->execute($identifier, $name, $cpf, $password);
 
         return $response->json([
             'success' => true,

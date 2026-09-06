@@ -44,7 +44,7 @@ class CreateAccountUseCase
         $driver->push(new ProcessAccountCreationJob($savedUser->getUuid()));
 
         return [
-            'uuid' => $savedUser->getUuid(),
+            'identifier' => $savedUser->getUuid(),
             'name' => $savedUser->getName()->getValue(),
             'cpf' => $savedUser->getCpf()->getMasked(),
             'status' => $savedUser->getStatus(),

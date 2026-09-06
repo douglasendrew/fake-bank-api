@@ -54,9 +54,10 @@ class AuthenticateUserUseCase
             'token_type' => 'Bearer',
             'expires_in' => 900, // 15 minutes
             'user' => [
-                'uuid' => $user->getUuid(),
+                'identifier' => $user->getUuid(),
                 'name' => $user->getName()->getValue(),
                 'cpf' => $user->getCpf()->getMasked(),
+                'status' => $user->getStatus(),
             ],
         ];
     }

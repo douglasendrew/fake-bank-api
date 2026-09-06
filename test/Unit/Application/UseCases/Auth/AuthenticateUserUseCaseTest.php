@@ -46,7 +46,7 @@ class AuthenticateUserUseCaseTest extends TestCase
 
         $this->assertEquals('jwt-token-123', $result['token']);
         $this->assertEquals(900, $result['expires_in']);
-        $this->assertEquals($user->getUuid(), $result['user']['uuid']);
+        $this->assertEquals($user->getUuid(), $result['user']['identifier']);
     }
 
     public function testFailedAuthenticationThrowsException(): void

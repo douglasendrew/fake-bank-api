@@ -14,5 +14,10 @@ interface PixKeyRepositoryInterface
 
     public function findByUserId(int $userId): ?PixKey;
 
+    /**
+     * @return PixKey[]
+     */
+    public function findAllByUserId(int $userId): array;
+
     public function delete(PixKey $pixKey): void;
 }

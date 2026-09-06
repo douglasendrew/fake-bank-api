@@ -22,7 +22,7 @@ class GetAccountStatusUseCase
         }
 
         return [
-            'uuid' => $user->getUuid(),
+            'identifier' => $user->getUuid(),
             'status' => $user->getStatus(),
             'created_at' => $user->getCreatedAt()->format(DATE_ATOM),
             'updated_at' => $user->getUpdatedAt()->format(DATE_ATOM),

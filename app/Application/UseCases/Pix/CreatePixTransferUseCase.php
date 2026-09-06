@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Pix;
 
-use App\Application\Jobs\ProcessPixTransferJob;
 use App\Domain\Account\Entities\Transaction;
 use App\Domain\Account\Repositories\AccountRepositoryInterface;
 use App\Domain\Account\Repositories\PixKeyRepositoryInterface;
@@ -12,16 +11,14 @@ use App\Domain\Account\Repositories\TransactionRepositoryInterface;
 use App\Domain\Account\Repositories\UserRepositoryInterface;
 use App\Domain\Account\ValueObjects\Cpf;
 use App\Domain\Account\ValueObjects\Money;
-use Hyperf\AsyncQueue\Driver\DriverFactory;
 use InvalidArgumentException;
 
-class SendPixTransferUseCase
+class CreatePixTransferUseCase
 {
     public function __construct(
         private UserRepositoryInterface $userRepository,
         private AccountRepositoryInterface $accountRepository,
         private PixKeyRepositoryInterface $pixKeyRepository,
-        private DriverFactory $driverFactory,
         private TransactionRepositoryInterface $transactionRepository
     ) {}
 
@@ -74,38 +71,39 @@ class SendPixTransferUseCase
             throw new InvalidArgumentException('Cannot send PIX transfer to yourself.');
         }
 
-        // Create PIX transaction in pending state
+        // Retrieve recipient user details
+        $recipientUser = $this->userRepository->findById($destinationAccount->getUserId());
+
+        $recipientData = [
+            'name' => $recipientUser?->getName()->getValue() ?? 'Unknown',
+            'cpf' => $recipientUser?->getCpf()->getMasked() ?? '***.***.***-**',
+            'account_number' => $destinationAccount->getAccountNumber()->getValue(),
+        ];
+
+        // Create PIX transaction in 'created' status (awaiting confirmation)
         $transaction = new Transaction(
             originAccountId: $senderAccount->getId(),
             destinationAccountId: $destinationAccount->getId(),
             type: 'pix_transfer',
             amount: $money,
-            status: 'pending',
+            status: 'created',
             payload: [
+                'pix_type' => $type,
+                'pix_key' => $targetKeyOrAccount,
                 'transfer_type' => $type,
                 'target_key_or_account' => $targetKeyOrAccount,
+                'recipient' => $recipientData,
             ]
         );
+
         $savedTransaction = $this->transactionRepository->save($transaction);
 
-        // Queue PIX transaction
-        $driver = $this->driverFactory->get('default');
-        $driver->push(new ProcessPixTransferJob(
-            senderAccountId: $senderAccount->getId(),
-            destinationAccountId: $destinationAccount->getId(),
-            amount: $money->getAmount(),
-            type: $type,
-            targetKeyOrAccount: $targetKeyOrAccount,
-            transactionUuid: $savedTransaction->getUuid()
-        ));
-
         return [
-            'message' => 'PIX transfer requested and queued for processing successfully.',
+            'message' => 'PIX transaction created. Please confirm to process transfer.',
             'identifier' => $savedTransaction->getUuid(),
             'amount' => $money->getAmount(),
-            'target' => $targetKeyOrAccount,
-            'type' => $type,
-            'status' => $savedTransaction->getStatus(),
+            'status' => 'created',
+            'recipient' => $recipientData,
         ];
     }
 }

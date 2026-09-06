@@ -41,7 +41,7 @@ class CreateAccountUseCaseTest extends TestCase
         $result = $useCase->execute('Douglas Silva', '52998224725', '941825');
 
         $this->assertEquals('pending_creation', $result['status']);
-        $this->assertNotEmpty($result['uuid']);
+        $this->assertNotEmpty($result['identifier']);
     }
 
     public function testExecuteDuplicateCpfThrowsException(): void

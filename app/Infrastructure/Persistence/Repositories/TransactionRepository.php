@@ -59,6 +59,31 @@ class TransactionRepository implements TransactionRepositoryInterface
             return null;
         }
 
+        return $this->mapToEntity($row);
+    }
+
+    public function findAllByAccountId(int $accountId): array
+    {
+        $rows = Db::table('fb_transactions')
+            ->where(function ($query) use ($accountId) {
+                $query->where('ac_id_origin', $accountId)
+                    ->orWhere('ac_id_destination', $accountId);
+            })
+            ->whereNull('tr_deleted_at')
+            ->orderBy('tr_created_at', 'desc')
+            ->orderBy('tr_id', 'desc')
+            ->get();
+
+        $transactions = [];
+        foreach ($rows as $row) {
+            $transactions[] = $this->mapToEntity($row);
+        }
+
+        return $transactions;
+    }
+
+    private function mapToEntity(object $row): Transaction
+    {
         return new Transaction(
             originAccountId: $row->ac_id_origin ? (int) $row->ac_id_origin : null,
             destinationAccountId: (int) $row->ac_id_destination,

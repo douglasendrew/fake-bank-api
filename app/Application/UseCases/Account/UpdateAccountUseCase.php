@@ -45,7 +45,7 @@ class UpdateAccountUseCase
         $driver->push(new ProcessAccountCreationJob($updatedUser->getUuid()));
 
         return [
-            'uuid' => $updatedUser->getUuid(),
+            'identifier' => $updatedUser->getUuid(),
             'name' => $updatedUser->getName()->getValue(),
             'cpf' => $updatedUser->getCpf()->getMasked(),
             'status' => $updatedUser->getStatus(),
