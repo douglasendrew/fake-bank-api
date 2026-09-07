@@ -1,6 +1,14 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Interfaces\Http\Controllers;
 
@@ -25,7 +33,8 @@ class PixController
         private ListPixKeysUseCase $listPixKeysUseCase,
         private CreatePixTransferUseCase $createPixTransferUseCase,
         private ConfirmPixTransferUseCase $confirmPixTransferUseCase
-    ) {}
+    ) {
+    }
 
     public function listKeys(RequestInterface $request, HttpResponse $response): ResponseInterface
     {

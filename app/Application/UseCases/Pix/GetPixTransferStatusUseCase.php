@@ -1,6 +1,14 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Application\UseCases\Pix;
 
@@ -15,7 +23,8 @@ class GetPixTransferStatusUseCase
         private TransactionRepositoryInterface $transactionRepository,
         private AccountRepositoryInterface $accountRepository,
         private UserRepositoryInterface $userRepository
-    ) {}
+    ) {
+    }
 
     public function execute(string $transactionUuid): array
     {

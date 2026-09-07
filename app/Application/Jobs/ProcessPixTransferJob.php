@@ -1,18 +1,21 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Application\Jobs;
 
-use App\Domain\Account\Entities\Transaction;
-use App\Domain\Account\Repositories\AccountRepositoryInterface;
-use App\Domain\Account\Repositories\TransactionRepositoryInterface;
-use App\Domain\Account\ValueObjects\Money;
 use AllowDynamicProperties;
-use Exception;
+use App\Application\Handlers\ProcessPixTransferHandler;
 use Hyperf\AsyncQueue\Job;
 use Hyperf\Context\ApplicationContext;
-use Hyperf\DbConnection\Db;
 
 #[AllowDynamicProperties]
 class ProcessPixTransferJob extends Job
@@ -48,63 +51,15 @@ class ProcessPixTransferJob extends Job
     public function handle(): void
     {
         $container = ApplicationContext::getContainer();
-        /** @var AccountRepositoryInterface $accountRepository */
-        $accountRepository = $container->get(AccountRepositoryInterface::class);
-        /** @var TransactionRepositoryInterface $transactionRepository */
-        $transactionRepository = $container->get(TransactionRepositoryInterface::class);
-
-        $transferAmount = new Money($this->amount);
-
-        try {
-            Db::transaction(function () use ($accountRepository, $transactionRepository, $transferAmount) {
-                $senderAccount = $accountRepository->findById($this->senderAccountId);
-                $destinationAccount = $accountRepository->findById($this->destinationAccountId);
-
-                if (! $senderAccount || ! $destinationAccount) {
-                    throw new Exception('Invalid accounts for PIX transfer.');
-                }
-
-                // Deduct balance from sender
-                $senderAccount->withdraw($transferAmount);
-                $accountRepository->save($senderAccount);
-
-                // Add balance to destination
-                $destinationAccount->deposit($transferAmount);
-                $accountRepository->save($destinationAccount);
-
-                // Update existing transaction or record new transaction
-                if ($this->transactionUuid) {
-                    $transaction = $transactionRepository->findByUuid($this->transactionUuid);
-                    if ($transaction) {
-                        $transaction->setStatus('completed');
-                        $transactionRepository->save($transaction);
-                        return;
-                    }
-                }
-
-                $transaction = new Transaction(
-                    originAccountId: $senderAccount->getId(),
-                    destinationAccountId: $destinationAccount->getId(),
-                    type: 'pix_transfer',
-                    amount: $transferAmount,
-                    status: 'completed',
-                    payload: [
-                        'transfer_type' => $this->type,
-                        'target_key_or_account' => $this->targetKeyOrAccount,
-                    ]
-                );
-
-                $transactionRepository->save($transaction);
-            });
-        } catch (\Throwable $e) {
-            if ($this->transactionUuid) {
-                $transaction = $transactionRepository->findByUuid($this->transactionUuid);
-                if ($transaction) {
-                    $transaction->setStatus('failed');
-                    $transactionRepository->save($transaction);
-                }
-            }
-            throw $e;
-        }
+        /** @var ProcessPixTransferHandler $handler */
+        $handler = $container->get(ProcessPixTransferHandler::class);
+        $handler->handle(
+            $this->senderAccountId,
+            $this->destinationAccountId,
+            $this->amount,
+            $this->type,
+            $this->targetKeyOrAccount,
+            $this->transactionUuid
+        );
     }
 }

@@ -1,6 +1,14 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Domain\Account\ValueObjects;
 
@@ -19,6 +27,11 @@ class AccountNumber
         $this->value = $accountNumber;
     }
 
+    public function __toString(): string
+    {
+        return $this->value;
+    }
+
     public static function generate(): self
     {
         $mainDigits = str_pad((string) random_int(100000000, 999999999), 9, '0', STR_PAD_LEFT);
@@ -27,11 +40,6 @@ class AccountNumber
     }
 
     public function getValue(): string
-    {
-        return $this->value;
-    }
-
-    public function __toString(): string
     {
         return $this->value;
     }

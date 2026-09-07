@@ -1,10 +1,18 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Application\UseCases\Pix;
 
-use App\Application\Jobs\ProcessPixTransferJob;
+use App\Application\Common\Contracts\EventProducerInterface;
 use App\Domain\Account\Entities\Transaction;
 use App\Domain\Account\Repositories\AccountRepositoryInterface;
 use App\Domain\Account\Repositories\PixKeyRepositoryInterface;
@@ -12,7 +20,6 @@ use App\Domain\Account\Repositories\TransactionRepositoryInterface;
 use App\Domain\Account\Repositories\UserRepositoryInterface;
 use App\Domain\Account\ValueObjects\Cpf;
 use App\Domain\Account\ValueObjects\Money;
-use Hyperf\AsyncQueue\Driver\DriverFactory;
 use InvalidArgumentException;
 
 class SendPixTransferUseCase
@@ -21,9 +28,10 @@ class SendPixTransferUseCase
         private UserRepositoryInterface $userRepository,
         private AccountRepositoryInterface $accountRepository,
         private PixKeyRepositoryInterface $pixKeyRepository,
-        private DriverFactory $driverFactory,
+        private EventProducerInterface $eventProducer,
         private TransactionRepositoryInterface $transactionRepository
-    ) {}
+    ) {
+    }
 
     public function execute(string $senderUuid, string $targetKeyOrAccount, string $typeInput, mixed $amount): array
     {
@@ -88,16 +96,16 @@ class SendPixTransferUseCase
         );
         $savedTransaction = $this->transactionRepository->save($transaction);
 
-        // Queue PIX transaction
-        $driver = $this->driverFactory->get('default');
-        $driver->push(new ProcessPixTransferJob(
-            senderAccountId: $senderAccount->getId(),
-            destinationAccountId: $destinationAccount->getId(),
-            amount: $money->getAmount(),
-            type: $type,
-            targetKeyOrAccount: $targetKeyOrAccount,
-            transactionUuid: $savedTransaction->getUuid()
-        ));
+        // Publish PIX transaction event to Kafka
+        $this->eventProducer->publish('bank.transaction.pix', [
+            'transaction_uuid' => $savedTransaction->getUuid(),
+            'sender_account_id' => $senderAccount->getId(),
+            'destination_account_id' => $destinationAccount->getId(),
+            'amount' => $money->getAmount(),
+            'type' => $type,
+            'target_key_or_account' => $targetKeyOrAccount,
+            'timestamp' => time(),
+        ], (string) $senderAccount->getId());
 
         return [
             'message' => 'PIX transfer requested and queued for processing successfully.',

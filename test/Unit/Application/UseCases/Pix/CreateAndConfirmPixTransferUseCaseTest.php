@@ -1,9 +1,18 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace HyperfTest\Unit\Application\UseCases\Pix;
 
+use App\Application\Common\Contracts\EventProducerInterface;
 use App\Application\UseCases\Pix\ConfirmPixTransferUseCase;
 use App\Application\UseCases\Pix\CreatePixTransferUseCase;
 use App\Domain\Account\Entities\Account;
@@ -18,12 +27,14 @@ use App\Domain\Account\ValueObjects\Cpf;
 use App\Domain\Account\ValueObjects\FullName;
 use App\Domain\Account\ValueObjects\Money;
 use App\Domain\Account\ValueObjects\Password;
-use Hyperf\AsyncQueue\Driver\DriverFactory;
-use Hyperf\AsyncQueue\Driver\DriverInterface;
 use InvalidArgumentException;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ * @coversNothing
+ */
 class CreateAndConfirmPixTransferUseCaseTest extends TestCase
 {
     protected function tearDown(): void
@@ -96,11 +107,11 @@ class CreateAndConfirmPixTransferUseCaseTest extends TestCase
         $userRepository = Mockery::mock(UserRepositoryInterface::class);
         $accountRepository = Mockery::mock(AccountRepositoryInterface::class);
         $transactionRepository = Mockery::mock(TransactionRepositoryInterface::class);
-        $driverFactory = Mockery::mock(DriverFactory::class);
-        $queueDriver = Mockery::mock(DriverInterface::class);
+        $eventProducer = Mockery::mock(EventProducerInterface::class);
 
-        $driverFactory->shouldReceive('get')->with('default')->andReturn($queueDriver);
-        $queueDriver->shouldReceive('push')->once()->andReturn(true);
+        $eventProducer->shouldReceive('publish')
+            ->once()
+            ->with('bank.transaction.pix', Mockery::type('array'), '1');
 
         $senderUser = new User(
             name: new FullName('Sender Person'),
@@ -143,7 +154,7 @@ class CreateAndConfirmPixTransferUseCaseTest extends TestCase
             $userRepository,
             $accountRepository,
             $transactionRepository,
-            $driverFactory
+            $eventProducer
         );
 
         $result = $confirmUseCase->execute('sender-uuid', $transaction->getUuid());
@@ -159,7 +170,7 @@ class CreateAndConfirmPixTransferUseCaseTest extends TestCase
         $userRepository = Mockery::mock(UserRepositoryInterface::class);
         $accountRepository = Mockery::mock(AccountRepositoryInterface::class);
         $transactionRepository = Mockery::mock(TransactionRepositoryInterface::class);
-        $driverFactory = Mockery::mock(DriverFactory::class);
+        $eventProducer = Mockery::mock(EventProducerInterface::class);
 
         $senderUser = new User(
             name: new FullName('Sender Person'),
@@ -190,7 +201,7 @@ class CreateAndConfirmPixTransferUseCaseTest extends TestCase
             $userRepository,
             $accountRepository,
             $transactionRepository,
-            $driverFactory
+            $eventProducer
         );
 
         $this->expectException(InvalidArgumentException::class);

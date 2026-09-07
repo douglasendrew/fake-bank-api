@@ -1,7 +1,14 @@
 <?php
 
 declare(strict_types=1);
-
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 use App\Interfaces\Http\Controllers\AccountController;
 use App\Interfaces\Http\Controllers\AuthController;
 use App\Interfaces\Http\Controllers\DepositController;
@@ -21,7 +28,6 @@ Router::addRoute(['GET', 'POST', 'HEAD'], '/', function () {
 
 // Global API Group with Rate Limiting & Action Audit Logging
 Router::addGroup('/api/v1', function () {
-
     // Public Auth & Registration routes
     Router::post('/accounts', [AccountController::class, 'create']);
     Router::get('/accounts/status/{identifier}', [AccountController::class, 'getStatus']);
@@ -47,7 +53,6 @@ Router::addGroup('/api/v1', function () {
     }, [
         'middleware' => [JwtAuthMiddleware::class],
     ]);
-
 }, [
     'middleware' => [RateLimitMiddleware::class, ActionLoggingMiddleware::class],
 ]);

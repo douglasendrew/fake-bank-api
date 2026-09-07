@@ -1,9 +1,18 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace HyperfTest\Unit\Application\UseCases\Pix;
 
+use App\Application\Common\Contracts\EventProducerInterface;
 use App\Application\UseCases\Pix\GetPixTransferStatusUseCase;
 use App\Application\UseCases\Pix\SendPixTransferUseCase;
 use App\Domain\Account\Entities\Account;
@@ -18,12 +27,14 @@ use App\Domain\Account\ValueObjects\Cpf;
 use App\Domain\Account\ValueObjects\FullName;
 use App\Domain\Account\ValueObjects\Money;
 use App\Domain\Account\ValueObjects\Password;
-use Hyperf\AsyncQueue\Driver\DriverFactory;
-use Hyperf\AsyncQueue\Driver\DriverInterface;
 use InvalidArgumentException;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ * @coversNothing
+ */
 class SendPixTransferUseCaseTest extends TestCase
 {
     protected function tearDown(): void
@@ -36,12 +47,12 @@ class SendPixTransferUseCaseTest extends TestCase
         $userRepository = Mockery::mock(UserRepositoryInterface::class);
         $accountRepository = Mockery::mock(AccountRepositoryInterface::class);
         $pixKeyRepository = Mockery::mock(PixKeyRepositoryInterface::class);
-        $driverFactory = Mockery::mock(DriverFactory::class);
+        $eventProducer = Mockery::mock(EventProducerInterface::class);
         $transactionRepository = Mockery::mock(TransactionRepositoryInterface::class);
-        $queueDriver = Mockery::mock(DriverInterface::class);
 
-        $driverFactory->shouldReceive('get')->with('default')->andReturn($queueDriver);
-        $queueDriver->shouldReceive('push')->once()->andReturn(true);
+        $eventProducer->shouldReceive('publish')
+            ->once()
+            ->with('bank.transaction.pix', Mockery::type('array'), '1');
 
         $senderUser = new User(
             name: new FullName('Sender User'),
@@ -75,7 +86,7 @@ class SendPixTransferUseCaseTest extends TestCase
             $userRepository,
             $accountRepository,
             $pixKeyRepository,
-            $driverFactory,
+            $eventProducer,
             $transactionRepository
         );
 
@@ -142,14 +153,14 @@ class SendPixTransferUseCaseTest extends TestCase
         $userRepository = Mockery::mock(UserRepositoryInterface::class);
         $accountRepository = Mockery::mock(AccountRepositoryInterface::class);
         $pixKeyRepository = Mockery::mock(PixKeyRepositoryInterface::class);
-        $driverFactory = Mockery::mock(DriverFactory::class);
+        $eventProducer = Mockery::mock(EventProducerInterface::class);
         $transactionRepository = Mockery::mock(TransactionRepositoryInterface::class);
 
         $useCase = new SendPixTransferUseCase(
             $userRepository,
             $accountRepository,
             $pixKeyRepository,
-            $driverFactory,
+            $eventProducer,
             $transactionRepository
         );
 

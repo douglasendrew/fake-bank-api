@@ -1,25 +1,33 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Interfaces\Http\Middleware;
 
+use App\Domain\Account\Repositories\UserRepositoryInterface;
 use App\Domain\Logging\Entities\LogAction;
 use App\Domain\Logging\Repositories\LogActionRepositoryInterface;
-use App\Domain\Logging\Repositories\LogErrorRepositoryInterface;
-use App\Domain\Account\Repositories\UserRepositoryInterface;
-use Hyperf\Context\ApplicationContext;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Throwable;
 
 class ActionLoggingMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private LogActionRepositoryInterface $logActionRepository,
         private UserRepositoryInterface $userRepository
-    ) {}
+    ) {
+    }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -62,7 +70,7 @@ class ActionLoggingMiddleware implements MiddlewareInterface
 
         try {
             $this->logActionRepository->save($logAction);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Ignore DB log failures during local execution without DB
         }
 

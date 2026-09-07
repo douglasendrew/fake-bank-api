@@ -1,26 +1,34 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Application\UseCases\Deposit;
 
-use App\Application\Jobs\ProcessDepositJob;
+use App\Application\Common\Contracts\EventProducerInterface;
 use App\Domain\Account\Entities\Transaction;
 use App\Domain\Account\Repositories\AccountRepositoryInterface;
 use App\Domain\Account\Repositories\TransactionRepositoryInterface;
 use App\Domain\Account\Repositories\UserRepositoryInterface;
 use App\Domain\Account\ValueObjects\Money;
-use Hyperf\AsyncQueue\Driver\DriverFactory;
 use InvalidArgumentException;
 
 class DepositMoneyUseCase
 {
     public function __construct(
         private AccountRepositoryInterface $accountRepository,
-        private DriverFactory $driverFactory,
+        private EventProducerInterface $eventProducer,
         private UserRepositoryInterface $userRepository,
         private TransactionRepositoryInterface $transactionRepository
-    ) {}
+    ) {
+    }
 
     public function execute(?string $accountNumber, mixed $amount, ?string $userUuid = null): array
     {
@@ -50,13 +58,13 @@ class DepositMoneyUseCase
         );
         $savedTransaction = $this->transactionRepository->save($transaction);
 
-        // Push to async processing queue
-        $driver = $this->driverFactory->get('default');
-        $driver->push(new ProcessDepositJob(
-            accountNumber: $account->getAccountNumber()->getValue(),
-            amount: $money->getAmount(),
-            transactionUuid: $savedTransaction->getUuid()
-        ));
+        // Publish deposit transaction event to Kafka
+        $this->eventProducer->publish('bank.transaction.deposit', [
+            'transaction_uuid' => $savedTransaction->getUuid(),
+            'account_number' => $account->getAccountNumber()->getValue(),
+            'amount' => $money->getAmount(),
+            'timestamp' => time(),
+        ], $account->getAccountNumber()->getValue());
 
         return [
             'message' => 'Deposit requested and queued for processing successfully.',

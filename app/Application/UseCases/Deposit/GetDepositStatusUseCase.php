@@ -1,6 +1,14 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Application\UseCases\Deposit;
 
@@ -13,7 +21,8 @@ class GetDepositStatusUseCase
     public function __construct(
         private TransactionRepositoryInterface $transactionRepository,
         private AccountRepositoryInterface $accountRepository
-    ) {}
+    ) {
+    }
 
     public function execute(string $transactionUuid): array
     {

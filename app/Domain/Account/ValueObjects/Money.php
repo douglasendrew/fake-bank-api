@@ -1,6 +1,14 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Domain\Account\ValueObjects;
 
@@ -17,6 +25,11 @@ class Money
         }
 
         $this->amount = round($amount, 2);
+    }
+
+    public function __toString(): string
+    {
+        return number_format($this->amount, 2, '.', '');
     }
 
     public static function fromCents(mixed $cents): self
@@ -59,10 +72,5 @@ class Money
         }
 
         return new self($this->amount - $other->amount);
-    }
-
-    public function __toString(): string
-    {
-        return number_format($this->amount, 2, '.', '');
     }
 }

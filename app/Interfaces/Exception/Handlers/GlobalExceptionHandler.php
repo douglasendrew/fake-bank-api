@@ -1,15 +1,26 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Interfaces\Exception\Handlers;
 
 use App\Domain\Logging\Entities\LogError;
 use App\Domain\Logging\Repositories\LogErrorRepositoryInterface;
+use Hyperf\Context\Context;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\ExceptionHandler\ExceptionHandler;
 use Hyperf\HttpMessage\Stream\SwooleStream;
+use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
 class GlobalExceptionHandler extends ExceptionHandler
@@ -17,14 +28,15 @@ class GlobalExceptionHandler extends ExceptionHandler
     public function __construct(
         protected StdoutLoggerInterface $logger,
         protected LogErrorRepositoryInterface $logErrorRepository
-    ) {}
+    ) {
+    }
 
     public function handle(Throwable $throwable, ResponseInterface $response): ResponseInterface
     {
         $this->stopPropagation();
 
-        /** @var \Psr\Http\Message\ServerRequestInterface $request */
-        $request = \Hyperf\Context\Context::get(\Psr\Http\Message\ServerRequestInterface::class);
+        /** @var ServerRequestInterface $request */
+        $request = Context::get(ServerRequestInterface::class);
 
         $endpoint = $request ? $request->getUri()->getPath() : 'CLI/Job';
         $rawParams = [];
@@ -63,7 +75,7 @@ class GlobalExceptionHandler extends ExceptionHandler
             $this->logger->error('Failed to log error into database: ' . $dbError->getMessage());
         }
 
-        $statusCode = ($throwable instanceof \InvalidArgumentException) ? 400 : 500;
+        $statusCode = ($throwable instanceof InvalidArgumentException) ? 400 : 500;
 
         $bodyData = json_encode([
             'error' => true,

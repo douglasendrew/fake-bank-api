@@ -1,6 +1,14 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Application\UseCases\Pix;
 
@@ -20,7 +28,8 @@ class CreatePixTransferUseCase
         private AccountRepositoryInterface $accountRepository,
         private PixKeyRepositoryInterface $pixKeyRepository,
         private TransactionRepositoryInterface $transactionRepository
-    ) {}
+    ) {
+    }
 
     public function execute(string $senderUuid, string $targetKeyOrAccount, string $typeInput, mixed $amount): array
     {

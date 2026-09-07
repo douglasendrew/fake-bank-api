@@ -1,24 +1,32 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Application\UseCases\Account;
 
-use App\Application\Jobs\ProcessAccountCreationJob;
+use App\Application\Common\Contracts\EventProducerInterface;
 use App\Domain\Account\Entities\User;
 use App\Domain\Account\Repositories\UserRepositoryInterface;
 use App\Domain\Account\ValueObjects\Cpf;
 use App\Domain\Account\ValueObjects\FullName;
 use App\Domain\Account\ValueObjects\Password;
-use Hyperf\AsyncQueue\Driver\DriverFactory;
 use InvalidArgumentException;
 
 class CreateAccountUseCase
 {
     public function __construct(
         private UserRepositoryInterface $userRepository,
-        private DriverFactory $driverFactory
-    ) {}
+        private EventProducerInterface $eventProducer
+    ) {
+    }
 
     public function execute(string $name, string $cpfInput, string $passwordInput): array
     {
@@ -39,9 +47,11 @@ class CreateAccountUseCase
 
         $savedUser = $this->userRepository->save($user);
 
-        // Enqueue account creation processing job
-        $driver = $this->driverFactory->get('default');
-        $driver->push(new ProcessAccountCreationJob($savedUser->getUuid()));
+        // Publish account creation event to Kafka
+        $this->eventProducer->publish('bank.account.creation', [
+            'user_uuid' => $savedUser->getUuid(),
+            'timestamp' => time(),
+        ], $savedUser->getUuid());
 
         return [
             'identifier' => $savedUser->getUuid(),

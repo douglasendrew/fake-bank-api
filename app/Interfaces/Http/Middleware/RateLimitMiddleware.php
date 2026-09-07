@@ -1,6 +1,14 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Interfaces\Http\Middleware;
 
@@ -10,6 +18,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Throwable;
 
 class RateLimitMiddleware implements MiddlewareInterface
 {
@@ -45,7 +54,7 @@ class RateLimitMiddleware implements MiddlewareInterface
                     'message' => 'Rate limit exceeded. Please wait before making more requests.',
                 ])->withStatus(429);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // If Redis is not running in local test environment, proceed gracefully
         }
 

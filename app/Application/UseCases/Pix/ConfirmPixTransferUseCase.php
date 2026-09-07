@@ -1,14 +1,21 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Application\UseCases\Pix;
 
-use App\Application\Jobs\ProcessPixTransferJob;
+use App\Application\Common\Contracts\EventProducerInterface;
 use App\Domain\Account\Repositories\AccountRepositoryInterface;
 use App\Domain\Account\Repositories\TransactionRepositoryInterface;
 use App\Domain\Account\Repositories\UserRepositoryInterface;
-use Hyperf\AsyncQueue\Driver\DriverFactory;
 use InvalidArgumentException;
 
 class ConfirmPixTransferUseCase
@@ -17,8 +24,9 @@ class ConfirmPixTransferUseCase
         private UserRepositoryInterface $userRepository,
         private AccountRepositoryInterface $accountRepository,
         private TransactionRepositoryInterface $transactionRepository,
-        private DriverFactory $driverFactory
-    ) {}
+        private EventProducerInterface $eventProducer
+    ) {
+    }
 
     public function execute(string $senderUuid, string $transactionUuid): array
     {
@@ -45,7 +53,7 @@ class ConfirmPixTransferUseCase
             throw new InvalidArgumentException("Transaction cannot be confirmed. Current status: {$transaction->getStatus()}.");
         }
 
-        // Re-verify funds before dispatching to queue
+        // Re-verify funds before dispatching to Kafka
         if ($senderAccount->getBalance()->getAmount() < $transaction->getAmount()->getAmount()) {
             throw new InvalidArgumentException('Insufficient funds for PIX transfer.');
         }
@@ -54,17 +62,17 @@ class ConfirmPixTransferUseCase
         $transaction->setStatus('processing');
         $this->transactionRepository->save($transaction);
 
-        // Queue processing job
+        // Publish PIX transaction event to Kafka
         $payload = $transaction->getPayload() ?? [];
-        $driver = $this->driverFactory->get('default');
-        $driver->push(new ProcessPixTransferJob(
-            senderAccountId: $transaction->getOriginAccountId(),
-            destinationAccountId: $transaction->getDestinationAccountId(),
-            amount: $transaction->getAmount()->getAmount(),
-            type: $payload['transfer_type'] ?? 'pix',
-            targetKeyOrAccount: $payload['target_key_or_account'] ?? '',
-            transactionUuid: $transaction->getUuid()
-        ));
+        $this->eventProducer->publish('bank.transaction.pix', [
+            'transaction_uuid' => $transaction->getUuid(),
+            'sender_account_id' => $transaction->getOriginAccountId(),
+            'destination_account_id' => $transaction->getDestinationAccountId(),
+            'amount' => $transaction->getAmount()->getAmount(),
+            'type' => $payload['transfer_type'] ?? 'pix',
+            'target_key_or_account' => $payload['target_key_or_account'] ?? '',
+            'timestamp' => time(),
+        ], (string) $transaction->getOriginAccountId());
 
         return [
             'message' => 'PIX transfer confirmed and sent for processing.',

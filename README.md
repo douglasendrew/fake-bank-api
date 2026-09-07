@@ -26,7 +26,7 @@ Uma API bancária moderna, robusta e escalável desenvolvida em PHP com foco em 
 
 O objetivo deste projeto é fornecer uma base sólida para serviços financeiros digitais. Cada requisição foi pensada para garantir consistência de dados, proteção de informações sensíveis e processamento desacoplado em segundo plano.
 
-Operações pesadas ou que exigem validações externas, como criação de conta, efetivação de depósitos e transferências PIX, são processadas via filas assíncronas com Redis, liberando o cliente HTTP imediatamente e oferecendo consultas de status em tempo real.
+Operações pesadas ou que exigem validações externas, como criação de conta, efetivação de depósitos e transferências PIX, são processadas via mensageria de alta performance com **Apache Kafka** (e suporte a filas assíncronas), liberando o cliente HTTP imediatamente e oferecendo consultas de status em tempo real.
 
 ---
 
@@ -35,16 +35,17 @@ Operações pesadas ou que exigem validações externas, como criação de conta
 A aplicação segue rigorosamente os princípios de **Clean Architecture** e **Domain-Driven Design (DDD)**, dividida em camadas com responsabilidades bem isoladas:
 
 - **Domain (Domínio):** Contém as entidades centrais do negócio (`User`, `Account`, `Transaction`, `PixKey`), os objetos de valor (`Cpf`, `FullName`, `Password`, `AccountNumber`, `Money`) com suas regras de validação intrínsecas e as interfaces de repositórios. Essa camada não depende de nenhum framework externo.
-- **Application (Casos de Uso e Jobs):** Orquestra o fluxo da aplicação. Cada ação do sistema possui um caso de uso dedicado (`CreateAccountUseCase`, `DepositMoneyUseCase`, `CreatePixTransferUseCase`, `GetAccountStatementUseCase`, etc.) e jobs de fila que executam o processamento assíncrono.
-- **Infrastructure (Infraestrutura):** Implementa o acesso ao banco de dados PostgreSQL, filas no Redis, geração e validação de tokens JWT e serviços de auditoria.
+- **Application (Casos de Uso, Contratos e Handlers):** Orquestra o fluxo da aplicação. Cada ação do sistema possui um caso de uso dedicado (`CreateAccountUseCase`, `DepositMoneyUseCase`, `CreatePixTransferUseCase`, `GetAccountStatementUseCase`, etc.), contratos de publicação de eventos (`EventProducerInterface`) e handlers dedicados (`ProcessAccountCreationHandler`, `ProcessDepositHandler`, `ProcessPixTransferHandler`).
+- **Infrastructure (Infraestrutura):** Implementa o acesso ao banco de dados PostgreSQL, mensageria e consumidores do Apache Kafka (`KafkaEventProducer`, `AccountCreationConsumer`, `DepositTransactionConsumer`, `PixTransferConsumer`), cache e rate limit no Redis, geração e validação de tokens JWT e serviços de auditoria.
 - **Interfaces / Http (Apresentação):** Controladores, rotas e middlewares HTTP (autenticação JWT, rate limiting e logs de auditoria).
 
 ### Destaques Arquiteturais
 
-- **Desacoplamento por Interfaces:** Repositórios e serviços são injetados via interfaces, facilitando manutenções e testes unitários.
+- **Desacoplamento por Interfaces:** Repositórios, mensageria e serviços são injetados via interfaces, facilitando manutenções e testes unitários sem acoplamento a drivers externos.
+- **Mensageria com Apache Kafka:** Transações financeiras e ciclo de vida de contas são disparadas para tópicos específicos (`bank.account.creation`, `bank.transaction.deposit`, `bank.transaction.pix`), garantindo particionamento, idempotência e escalabilidade horizontal dos workers/consumidores.
 - **Consistência e Imutabilidade:** Uso de Value Objects para garantir que CPFs inválidos, nomes fora do padrão ou valores monetários negativos sequer consigam entrar no domínio.
 - **Mascaramento Automático:** Dados sensíveis como CPF são automaticamente mascarados nas respostas públicas e extratos (exemplo: `529.***.***-25`).
-- **Resiliência:** Operações em lote e concorrência tratadas com filas assíncronas e transações de banco de dados para evitar inconsistência de saldo.
+- **Resiliência:** Concorrência tratada com transações de banco de dados ACID e mensageria distribuída para evitar inconsistência de saldo.
 
 ---
 
@@ -52,11 +53,12 @@ A aplicação segue rigorosamente os princípios de **Clean Architecture** e **D
 
 - **PHP 8.5+:** Linguagem base, utilizando recursos modernos de tipagem estrita, atributos e promoção de propriedades de construtor.
 - **Hyperf Framework:** Framework orientado a microserviços e alta performance, baseado no motor de corrotinas do Swoole.
+- **Apache Kafka:** Broker distribuído de eventos e mensageria (executando em modo KRaft) para processamento assíncrono de transações e contas bancárias via `hyperf/kafka`.
 - **Swoole:** Engine de rede orientada a eventos e corrotinas para PHP, proporcionando alto rendimento com I/O não bloqueante.
 - **PostgreSQL:** Banco de dados relacional para persistência transacional com segurança ACID.
-- **Redis:** Utilizado como broker de filas assíncronas (Hyperf AsyncQueue) e controle de taxa de requisições (Rate Limit).
+- **Redis:** Utilizado para controle de taxa de requisições (Rate Limit) e caching.
 - **JWT:** Autenticação segura via tokens Bearer assinados.
-- **PHPUnit 11 e Mockery:** Suíte completa de testes unitários cobrindo todos os casos de uso.
+- **PHPUnit 11 e Mockery:** Suíte completa de testes unitários cobrindo todos os casos de uso, handlers e consumidores.
 
 ---
 
@@ -65,12 +67,12 @@ A aplicação segue rigorosamente os princípios de **Clean Architecture** e **D
 O desenvolvimento foi guiado por passos iterativos para simular a experiência de um banco real:
 
 1. **Modelagem de Domínio:** Criação dos Value Objects de CPF (com validação completa de dígitos verificadores), senhas criptografadas com bcrypt e controle de valores monetários centavo a centavo.
-2. **Ciclo de Vida da Conta:** Ao criar uma conta, o registro inicial recebe o status `pending_creation` e um job é enviado para a fila Redis. O worker processa a abertura, cria o registro bancário, gera o número da conta e atualiza o status para `active`.
+2. **Ciclo de Vida da Conta com Kafka:** Ao criar uma conta, o registro inicial recebe o status `pending_creation` e um evento é publicado no tópico `bank.account.creation` do Kafka. O consumidor `AccountCreationConsumer` processa a abertura, cria o registro bancário, gera o número da conta e atualiza o status para `approved`.
 3. **Segurança e Auditoria:** Foi implementado middleware de Rate Limiting para prevenir abusos, autenticação JWT para rotas restritas e logs de auditoria em cada operação financeira.
-4. **Fluxo de Depósito Inteligente:** O endpoint aceita informar uma conta de destino ou, caso omitida, deposita automaticamente na conta da pessoa autenticada. O depósito entra com status `pending` e o job credita o saldo de maneira atômica.
+4. **Fluxo de Depósito Inteligente:** O endpoint aceita informar uma conta de destino ou, caso omitida, deposita automaticamente na conta da pessoa autenticada. O depósito entra com status `pending`, o evento é publicado no tópico `bank.transaction.deposit` e o worker `DepositTransactionConsumer` credita o saldo de maneira atômica.
 5. **PIX em Duas Etapas:** Para prevenir fraudes e erros de digitação, o envio de PIX é dividido em:
    - **Etapa 1 (Criação):** O usuário informa a chave ou conta e o valor. O sistema localiza o destinatário, cria a transação com status `created` e retorna os dados do recebedor com CPF mascarado para conferência.
-   - **Etapa 2 (Confirmação):** Com o identificador em mãos, o usuário confirma o envio. O saldo é verificado, o status avança para `processing` e a transação entra na fila de compensação.
+   - **Etapa 2 (Confirmação):** Com o identificador em mãos, o usuário confirma o envio. O saldo é verificado, o status avança para `processing` e a transação entra no tópico `bank.transaction.pix` do Kafka para liquidação pelo `PixTransferConsumer`.
 6. **Extrato Detalhado:** Permite visualizar todas as movimentações financeiras com identificador único, tipo de transação, dados do remetente (`origin`), do recebedor (`recipient` e `receipt`) e data formatada.
 7. **Padronização de Identificadores:** Todas as rotas, parâmetros de URL e respostas JSON utilizam o termo `identifier` para referenciar transações e usuários.
 8. **Valores Financeiros em Centavos:** Todas as rotas que envolvem dinheiro (depósitos e transferências PIX) aceitam exclusivamente valores inteiros representando centavos (por exemplo, 1000 equivale a R$ 10,00). Valores decimais ou flutuantes são sumariamente rejeitados para evitar imprecisões financeiras de arredondamento.
@@ -81,7 +83,7 @@ O desenvolvimento foi guiado por passos iterativos para simular a experiência d
 
 ### Pré-requisitos
 
-- Docker e Docker Compose instalados, ou ambiente local com PHP 8.2+, extensão Swoole ou Swow, PostgreSQL e Redis.
+- Docker e Docker Compose instalados, ou ambiente local com PHP 8.2+, extensão Swoole ou Swow, PostgreSQL, Redis e Apache Kafka.
 
 ### Passo a passo com Docker
 
@@ -100,7 +102,7 @@ composer install
 ```bash
 cp .env.example .env
 ```
-Ajuste as credenciais do PostgreSQL e do Redis conforme o seu ambiente.
+Ajuste as credenciais do PostgreSQL, Redis e Apache Kafka (`KAFKA_BROKERS`, `KAFKA_GROUP_ID`) conforme o seu ambiente.
 
 4. Execute as migrações do banco de dados:
 ```bash

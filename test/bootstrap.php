@@ -37,4 +37,3 @@ if (extension_loaded('swoole') || extension_loaded('swow')) {
     $container = require BASE_PATH . '/config/container.php';
     $container->get(ApplicationInterface::class);
 }
-

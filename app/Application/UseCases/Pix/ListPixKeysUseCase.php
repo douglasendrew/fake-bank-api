@@ -1,6 +1,14 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Application\UseCases\Pix;
 
@@ -13,7 +21,8 @@ class ListPixKeysUseCase
     public function __construct(
         private UserRepositoryInterface $userRepository,
         private PixKeyRepositoryInterface $pixKeyRepository
-    ) {}
+    ) {
+    }
 
     public function execute(string $userUuid): array
     {

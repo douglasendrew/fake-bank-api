@@ -1,6 +1,14 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Domain\Account\ValueObjects;
 
@@ -61,7 +69,7 @@ class Password
         }
 
         // 2. Check for 3-digit or 4-digit sequential substrings like '123', '321', '890', etc.
-        for ($i = 0; $i <= strlen($password) - 3; $i++) {
+        for ($i = 0; $i <= strlen($password) - 3; ++$i) {
             $d1 = (int) $password[$i];
             $d2 = (int) $password[$i + 1];
             $d3 = (int) $password[$i + 2];
